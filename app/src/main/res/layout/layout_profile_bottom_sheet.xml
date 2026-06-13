@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/shape_bottom_sheet_bg"
+    android:padding="24dp">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="#33FFFFFF"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Profile Header Info -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp">
+
+        <FrameLayout
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/shape_avatar_gradient"
+            android:layout_marginEnd="16dp">
+
+            <TextView
+                android:id="@+id/tv_profile_initial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="U"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_profile_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="User Name"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_profile_email"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="user@example.com"
+                android:textColor="#94A3B8"
+                android:textSize="14sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#1F2937"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Change Password Section Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Security Settings"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Current Password Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:boxBackgroundColor="#0B0C15"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxStrokeColor="#1E293B"
+        app:hintTextColor="#94A3B8"
+        app:passwordToggleEnabled="true"
+        app:passwordToggleTint="#94A3B8"
+        app:startIconDrawable="@drawable/ic_lock_outline"
+        app:startIconTint="#94A3B8">
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/et_profile_current_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Current Password"
+            android:inputType="textPassword"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- New Password Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:boxBackgroundColor="#0B0C15"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxStrokeColor="#1E293B"
+        app:hintTextColor="#94A3B8"
+        app:passwordToggleEnabled="true"
+        app:passwordToggleTint="#94A3B8"
+        app:startIconDrawable="@drawable/ic_lock_outline"
+        app:startIconTint="#94A3B8">
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/et_profile_new_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="New Password"
+            android:inputType="textPassword"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Confirm Password Input -->
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        app:boxBackgroundColor="#0B0C15"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxStrokeColor="#1E293B"
+        app:hintTextColor="#94A3B8"
+        app:passwordToggleEnabled="true"
+        app:passwordToggleTint="#94A3B8"
+        app:startIconDrawable="@drawable/ic_lock_outline"
+        app:startIconTint="#94A3B8">
+
+        <androidx.appcompat.widget.AppCompatEditText
+            android:id="@+id/et_profile_confirm_password"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Confirm New Password"
+            android:inputType="textPassword"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Update Password Button -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_profile_update_password"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_logo_gradient"
+        android:text="Update Password"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textAllCaps="false" />
+
+    <!-- Log Out Button -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_profile_logout"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/shape_danger_outline"
+        android:text="Log Out"
+        android:textColor="#EF4444"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textAllCaps="false" />
+
+</LinearLayout>

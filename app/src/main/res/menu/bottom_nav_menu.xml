@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_nav_compass"
+        android:title="Destinations"/>
+    <item
+        android:id="@+id/nav_add"
+        android:icon="@drawable/ic_add_location_24dp"
+        android:title="Add Place"/>
+    <item
+        android:id="@+id/nav_contacts"
+        android:icon="@drawable/ic_fab_contacts"
+        android:title="Contacts"/>
+    <item
+        android:id="@+id/nav_history"
+        android:icon="@drawable/ic_fab_history"
+        android:title="History"/>
+</menu>

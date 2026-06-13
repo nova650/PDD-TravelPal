@@ -43,18 +43,20 @@ export const authAPI = {
     if (data.token) {
       localStorage.setItem('travelpal_token', data.token);
       localStorage.setItem('travelpal_email', data.email);
+      localStorage.setItem('travelpal_name', data.name || email.split('@')[0]);
     }
     return data;
   },
 
-  signup: async (email, password) => {
+  signup: async (email, password, name) => {
     const data = await request('/auth/signup', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, name }),
     });
     if (data.token) {
       localStorage.setItem('travelpal_token', data.token);
       localStorage.setItem('travelpal_email', data.email);
+      localStorage.setItem('travelpal_name', name || email.split('@')[0]);
     }
     return data;
   },
@@ -62,6 +64,7 @@ export const authAPI = {
   logout: () => {
     localStorage.removeItem('travelpal_token');
     localStorage.removeItem('travelpal_email');
+    localStorage.removeItem('travelpal_name');
   },
 
   isAuthenticated: () => {
@@ -70,46 +73,20 @@ export const authAPI = {
 
   getEmail: () => {
     return localStorage.getItem('travelpal_email') || '';
-  }
+  },
+
+  getName: () => {
+    return localStorage.getItem('travelpal_name') || '';
+  },
 };
 
-export const destinationsAPI = {
-  getAll: () => request('/destinations'),
-  create: (dest) => request('/destinations', {
-    method: 'POST',
-    body: JSON.stringify(dest),
-  }),
-  update: (id, dest) => request(`/destinations/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(dest),
-  }),
-  delete: (id) => request(`/destinations/${id}`, {
-    method: 'DELETE',
-  }),
-  deleteAll: () => request('/destinations', {
-    method: 'DELETE',
-  }),
-};
-
-export const tripsAPI = {
+export const scansAPI = {
   getAll: () => request('/trips'),
-  create: (trip) => request('/trips', {
+  create: (scan) => request('/trips', {
     method: 'POST',
-    body: JSON.stringify(trip),
+    body: JSON.stringify(scan),
   }),
   deleteAll: () => request('/trips', {
     method: 'DELETE',
   }),
-};
-
-export const emergencyAPI = {
-  get: () => request('/emergency'),
-  save: (contacts) => request('/emergency', {
-    method: 'POST',
-    body: JSON.stringify(contacts),
-  }),
-};
-
-export const configAPI = {
-  getMapsKey: () => request('/config/maps-key'),
 };

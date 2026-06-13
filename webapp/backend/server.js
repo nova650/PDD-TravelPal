@@ -2,14 +2,48 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+
+// Enforce JWT_SECRET at startup
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET environment variable is not defined.');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Core Security Middlewares
+app.use(helmet());
+
+// Restrict CORS to specific origins
+const whitelist = [process.env.FRONTEND_URL || 'http://localhost:5173'];
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+app.use(cors(corsOptions));
+
+// Set Request Payload Limit (DoS prevention)
+app.use(express.json({ limit: '10kb' }));
+
+// Apply Rate Limiting to Auth Endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+app.use('/api/auth', authLimiter);
+
 
 // Database connection
 const dbPath = path.join(__dirname, 'db', 'database.sqlite');
@@ -77,6 +111,14 @@ function initializeDatabase() {
         contact2 TEXT,
         contact3 TEXT,
         FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Revoked Tokens table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS revoked_tokens (
+        token TEXT PRIMARY KEY,
+        expiresAt INTEGER NOT NULL
       )
     `);
   });

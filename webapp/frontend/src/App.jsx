@@ -1,55 +1,97 @@
 import React, { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
+import LoginPage from './components/LoginPage';
+import RegisterPage from './components/RegisterPage';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
 import Dashboard from './components/Dashboard';
 import { authAPI } from './utils/api';
 import './App.css';
 
 function App() {
-  const [view, setView] = useState('landing'); // 'landing' | 'app'
+  // 'landing' | 'login' | 'register' | 'forgot-password' | 'dashboard'
+  const [view, setView] = useState('landing');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState('');
+  const [doctorName, setDoctorName] = useState('');
 
-  // Check auth session on load
   useEffect(() => {
     const authStatus = authAPI.isAuthenticated();
     setIsAuthenticated(authStatus);
     if (authStatus) {
       setEmail(authAPI.getEmail());
+      setDoctorName(authAPI.getName());
     }
   }, []);
 
-  const handleLoginSuccess = (userEmail) => {
+  const handleLoginSuccess = (userEmail, name) => {
     setIsAuthenticated(true);
     setEmail(userEmail);
-    setView('app'); // Automatically take user to app on login
+    setDoctorName(name || userEmail.split('@')[0]);
+    setView('dashboard');
   };
 
   const handleLogout = () => {
     authAPI.logout();
     setIsAuthenticated(false);
     setEmail('');
-    setView('landing');
+    setDoctorName('');
+    setView('login');
   };
 
-  const handleEnterApp = () => {
-    setView('app');
+  const handleAccessApp = () => {
+    if (isAuthenticated) {
+      setView('dashboard');
+    } else {
+      setView('login');
+    }
   };
 
-  const handleBackToLanding = () => {
-    setView('landing');
-  };
+  if (view === 'dashboard' && isAuthenticated) {
+    return (
+      <Dashboard
+        onLogout={handleLogout}
+        email={email}
+        doctorName={doctorName}
+      />
+    );
+  }
 
-  if (view === 'app' && isAuthenticated) {
-    return <Dashboard onLogout={handleLogout} onBackToLanding={handleBackToLanding} email={email} />;
+  if (view === 'login') {
+    return (
+      <LoginPage
+        onLoginSuccess={handleLoginSuccess}
+        onGoRegister={() => setView('register')}
+        onGoForgotPassword={() => setView('forgot-password')}
+        onBackToLanding={() => setView('landing')}
+      />
+    );
+  }
+
+  if (view === 'register') {
+    return (
+      <RegisterPage
+        onRegisterSuccess={handleLoginSuccess}
+        onGoLogin={() => setView('login')}
+      />
+    );
+  }
+
+  if (view === 'forgot-password') {
+    return (
+      <ForgotPasswordPage
+        onBackToLogin={() => setView('login')}
+      />
+    );
   }
 
   return (
     <LandingPage
       isAuthenticated={isAuthenticated}
       email={email}
-      onLoginSuccess={handleLoginSuccess}
+      doctorName={doctorName}
+      onAccessApp={handleAccessApp}
       onLogout={handleLogout}
-      onEnterApp={handleEnterApp}
+      onGoLogin={() => setView('login')}
     />
   );
 }

@@ -1,596 +1,294 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Navigation, 
-  MapPin, 
-  History, 
-  ShieldAlert, 
-  Plus, 
-  Settings, 
-  VolumeX,
-  CheckCircle,
-  Zap,
-  ArrowLeft,
-  LogOut
-} from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import PatientHistory from './PatientHistory';
+import Analytics from './Analytics';
+import Settings from './Settings';
+import CTScanWorkspace from './CTScanWorkspace';
+import '../styles/dashboard.css';
 
-import { 
-  destinationsAPI,
-  tripsAPI,
-  emergencyAPI,
-  configAPI
-} from '../utils/api';
+export default function Dashboard({ onLogout, email, doctorName }) {
+  // 'dashboard' | 'history' | 'analytics' | 'settings'
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [scans, setScans] = useState([]);
+  const [showWorkspace, setShowWorkspace] = useState(false);
+  const [filterMode, setFilterMode] = useState('all'); // 'all' | 'normal' | 'abnormal'
+  const fileInputRef = useRef(null);
 
-import {
-  getSosLogs,
-  addSosLog,
-  clearSosLogs
-} from '../utils/db'; // Keep SOS logs simulated locally
+  // Stat calculations
+  const normalScans = scans.filter(s => s.isNormal === true);
+  const abnormalScans = scans.filter(s => s.isNormal === false);
 
-import DestinationCard from './DestinationCard';
-import AddDestination from './AddDestination';
-import DestinationDetail from './DestinationDetail';
-import EmergencyContacts from './EmergencyContacts';
-import TripHistory from './TripHistory';
-import { calculateDistance } from '../utils/navigation';
+  const filteredScans = scans.filter(s => {
+    if (filterMode === 'normal') return s.isNormal === true;
+    if (filterMode === 'abnormal') return s.isNormal === false;
+    return true;
+  });
 
-// Web Audio API Synthesizer for offline alarm sirens
-let audioCtx = null;
-let alarmBeepInterval = null;
-
-const startWebAlarmSiren = () => {
-  if (alarmBeepInterval) return;
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContext) return;
-  audioCtx = new AudioContext();
-
-  const playBeep = () => {
-    if (!audioCtx || audioCtx.state === 'suspended') return;
-    const osc1 = audioCtx.createOscillator();
-    const osc2 = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-
-    osc1.type = 'sawtooth';
-    osc1.frequency.setValueAtTime(900, audioCtx.currentTime);
-
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(910, audioCtx.currentTime);
-
-    gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
-
-    osc1.connect(gainNode);
-    osc2.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-
-    osc1.start();
-    osc2.start();
-    osc1.stop(audioCtx.currentTime + 0.4);
-    osc2.stop(audioCtx.currentTime + 0.4);
-  };
-
-  alarmBeepInterval = setInterval(playBeep, 600);
-};
-
-const stopWebAlarmSiren = () => {
-  if (alarmBeepInterval) {
-    clearInterval(alarmBeepInterval);
-    alarmBeepInterval = null;
-  }
-  if (audioCtx) {
-    audioCtx.close();
-    audioCtx = null;
-  }
-};
-
-export default function Dashboard({ onLogout, onBackToLanding }) {
-  // Navigation tabs: 'destinations' | 'add-place' | 'history' | 'emergency' | 'detail'
-  const [activeTab, setActiveTab] = useState('destinations');
-  
-  // App States
-  const [destinations, setDestinations] = useState([]);
-  const [tripHistory, setTripHistory] = useState([]);
-  const [sosLogs, setSosLogs] = useState([]);
-  const [mapsApiKey, setMapsApiKey] = useState('');
-  
-  // Navigation details
-  const [selectedDest, setSelectedDest] = useState(null);
-  const [editingDest, setEditingDest] = useState(null);
-  
-  // Tracking & Location
-  const [activeTrackingDest, setActiveTrackingDest] = useState(null);
-  const [userLocation, setUserLocation] = useState({ lat: 37.7749, lon: -122.4194 }); // SF Default
-  const [initialDistance, setInitialDistance] = useState(0);
-  const [tripStartTime, setTripStartTime] = useState(0);
-  const [notifyContact, setNotifyContact] = useState(false);
-  const [watchId, setWatchId] = useState(null);
-  
-  // Simulated GPS Coordinates controls
-  const [isSimulatedGps, setIsSimulatedGps] = useState(false);
-  const [simLat, setSimLat] = useState(37.7749);
-  const [simLon, setSimLon] = useState(-122.4194);
-  
-  // Alert Modals
-  const [alarmTriggered, setAlarmTriggered] = useState(false);
-  const [arrivalDetails, setArrivalDetails] = useState(null);
-
-  // SOS state
-  const [isSosActive, setIsSosActive] = useState(false);
-  const [emergencyContacts, setEmergencyContacts] = useState({ contact1: '', contact2: '', contact3: '' });
-  const sosIntervalRef = useRef(null);
-
-  // Load Initial DB records from APIs
-  useEffect(() => {
-    fetchDestinations();
-    fetchTripHistory();
-    fetchEmergencyContacts();
-    setSosLogs(getSosLogs());
-
-    // Fetch Google Maps API Key from config backend route
-    configAPI.getMapsKey()
-      .then(data => {
-        setMapsApiKey(data.mapsApiKey);
-        console.log("Maps API Key fetched successfully:", data.mapsApiKey ? "Loaded" : "Empty");
-      })
-      .catch(err => console.error("Could not fetch maps key config:", err));
-
-    if (Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  const fetchDestinations = () => {
-    destinationsAPI.getAll()
-      .then(setDestinations)
-      .catch(err => console.error("Error fetching destinations API:", err));
-  };
-
-  const fetchTripHistory = () => {
-    tripsAPI.getAll()
-      .then(setTripHistory)
-      .catch(err => console.error("Error fetching trips API:", err));
-  };
-
-  const fetchEmergencyContacts = () => {
-    emergencyAPI.get()
-      .then(setEmergencyContacts)
-      .catch(err => console.error("Error fetching emergency API:", err));
-  };
-
-  // Sync simulated/real GPS locations
-  useEffect(() => {
-    if (isSimulatedGps) {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-        setWatchId(null);
-      }
-      setUserLocation({ lat: parseFloat(simLat), lon: parseFloat(simLon) });
-    } else {
-      if (navigator.geolocation) {
-        const id = navigator.geolocation.watchPosition(
-          (pos) => {
-            const currentLat = pos.coords.latitude;
-            const currentLon = pos.coords.longitude;
-            setUserLocation({ lat: currentLat, lon: currentLon });
-            setSimLat(currentLat);
-            setSimLon(currentLon);
-          },
-          (err) => console.error("Geolocation error", err),
-          { enableHighAccuracy: true }
-        );
-        setWatchId(id);
-      } else {
-        alert("Geolocation not supported. Reverting to Simulation.");
-        setIsSimulatedGps(true);
-      }
-    }
-  }, [isSimulatedGps, simLat, simLon]);
-
-  // Proximity Alert Boundary Check Loop
-  useEffect(() => {
-    if (!activeTrackingDest || alarmTriggered) return;
-
-    const dist = calculateDistance(
-      userLocation.lat,
-      userLocation.lon,
-      activeTrackingDest.latitude,
-      activeTrackingDest.longitude
-    );
-
-    if (dist < 5.0) {
-      triggerArrivalAlert();
-    }
-  }, [userLocation, activeTrackingDest, alarmTriggered]);
-
-  // SOS Dispatch timer loop
-  useEffect(() => {
-    if (isSosActive) {
-      dispatchSosSMS();
-      sosIntervalRef.current = setInterval(() => {
-        dispatchSosSMS();
-      }, 60000);
-    } else {
-      if (sosIntervalRef.current) {
-        clearInterval(sosIntervalRef.current);
-        sosIntervalRef.current = null;
-      }
-    }
-    return () => {
-      if (sosIntervalRef.current) clearInterval(sosIntervalRef.current);
+  const handleSyncComplete = (report) => {
+    const newScan = {
+      id: Date.now(),
+      patientId: report.patientId,
+      patientName: report.patientName,
+      scanResult: report.label,
+      confidence: report.confidence,
+      isNormal: report.isNormal,
+      scanDate: report.scanDate,
+      label: report.label,
     };
-  }, [isSosActive, userLocation, emergencyContacts]);
+    setScans(prev => [newScan, ...prev]);
+  };
 
-  // --- Core Handlers ---
+  const handleDeleteScan = (id) => {
+    setScans(prev => prev.filter(s => s.id !== id));
+  };
 
-  const triggerSosAlert = () => {
-    const activeContacts = [emergencyContacts.contact1, emergencyContacts.contact2, emergencyContacts.contact3].filter(Boolean);
-
-    if (activeContacts.length === 0) {
-      alert("Please configure and save emergency contacts first inside the SOS Center tab.");
-      setActiveTab('emergency');
-      return;
-    }
-
-    setIsSosActive(true);
-    if (Notification.permission === 'granted') {
-      new Notification("SOS Active", { body: "SOS has been triggered. Broadcast coordinates active." });
+  const handleFileSelect = (e) => {
+    if (e.target.files[0]) {
+      setShowWorkspace(true);
     }
   };
 
-  const stopSosAlert = () => {
-    setIsSosActive(false);
-  };
-
-  const dispatchSosSMS = () => {
-    const activeContacts = [emergencyContacts.contact1, emergencyContacts.contact2, emergencyContacts.contact3].filter(Boolean);
-    if (activeContacts.length === 0) return;
-
-    const message = `SOS! I need help. My location: http://maps.google.com/maps?q=${userLocation.lat.toFixed(5)},${userLocation.lon.toFixed(5)}`;
-    addSosLog(message, activeContacts);
-    setSosLogs(getSosLogs());
-  };
-
-  const startTracking = (dest) => {
-    const dist = calculateDistance(userLocation.lat, userLocation.lon, dest.latitude, dest.longitude);
-    setActiveTrackingDest(dest);
-    setInitialDistance(dist);
-    setTripStartTime(Date.now());
-    setAlarmTriggered(false);
-  };
-
-  const stopTracking = () => {
-    setActiveTrackingDest(null);
-    setInitialDistance(0);
-    setTripStartTime(0);
-  };
-
-  const triggerArrivalAlert = () => {
-    setAlarmTriggered(true);
-    startWebAlarmSiren();
-
-    const durationMin = Math.max(1, Math.round((Date.now() - tripStartTime) / 60000));
-    
-    // Log trip to Backend DB
-    const completedTrip = {
-      destinationTitle: activeTrackingDest.title,
-      destinationLocation: activeTrackingDest.location,
-      distanceTravelled: initialDistance,
-      durationMinutes: durationMin,
-      arrivedAt: Date.now()
-    };
-
-    tripsAPI.create(completedTrip)
-      .then(() => fetchTripHistory())
-      .catch(err => console.error("Failed to log trip to backend API:", err));
-
-    setArrivalDetails({
-      destName: activeTrackingDest.title,
-      distance: initialDistance,
-      duration: durationMin
-    });
-
-    if (notifyContact && activeTrackingDest.contactNumber) {
-      const smsMessage = `${activeTrackingDest.title} has arrived at ${activeTrackingDest.location}`;
-      addSosLog(smsMessage, [activeTrackingDest.contactNumber]);
-      setSosLogs(getSosLogs());
-    }
-
-    if (Notification.permission === 'granted') {
-      new Notification("Destination Reached", { 
-        body: `You are near your destination: ${activeTrackingDest.title}!` 
-      });
-    }
-
-    stopTracking();
-  };
-
-  const dismissAlarm = () => {
-    stopWebAlarmSiren();
-    setAlarmTriggered(false);
-    setArrivalDetails(null);
-  };
-
-  const handleSaveDestination = (payload) => {
-    const apiCall = payload.id 
-      ? destinationsAPI.update(payload.id, payload)
-      : destinationsAPI.create(payload);
-
-    apiCall
-      .then(() => {
-        fetchDestinations();
-        setActiveTab('destinations');
-        setEditingDest(null);
-      })
-      .catch(err => alert("Error saving destination API: " + err.message));
-  };
-
-  const handleDeleteDestination = (id) => {
-    if (window.confirm("Are you sure you want to delete this destination?")) {
-      destinationsAPI.delete(id)
-        .then(() => {
-          fetchDestinations();
-          if (activeTrackingDest && activeTrackingDest.id === id) {
-            stopTracking();
-          }
-        })
-        .catch(err => alert("Error deleting destination API: " + err.message));
-    }
-  };
-
-  const handleDeleteAll = () => {
-    if (window.confirm("Are you sure you want to delete all destinations?")) {
-      destinationsAPI.deleteAll()
-        .then(() => {
-          setDestinations([]);
-          stopTracking();
-        })
-        .catch(err => alert("Error clearing destinations API: " + err.message));
-    }
-  };
-
-  const handleClearHistory = () => {
-    tripsAPI.deleteAll()
-      .then(() => {
-        setTripHistory([]);
-      })
-      .catch(err => alert("Error clearing trip history API: " + err.message));
-  };
-
-  const handleClearSosLogs = () => {
-    clearSosLogs();
-    setSosLogs([]);
-  };
-
-  const handleSaveEmergencyContacts = (contacts) => {
-    return emergencyAPI.save(contacts)
-      .then(() => {
-        fetchEmergencyContacts();
-      });
-  };
-
-  const handleEditClick = (dest) => {
-    setEditingDest(dest);
-    setActiveTab('add-place');
-  };
-
-  const handleTrackClick = (dest) => {
-    setSelectedDest(dest);
-    setActiveTab('detail');
-  };
-
+  const displayName = doctorName || email?.split('@')[0] || 'Doctor';
 
   return (
-    <div className="app-container">
-      {/* Sidebar Navigation */}
-      <aside className="sidebar">
-        <div>
-          <div className="sidebar-logo" onClick={onBackToLanding} style={{ cursor: 'pointer' }}>
-            <div className="logo-icon" style={{ width: '32px', height: '32px', borderRadius: '8px' }}>
-              <Navigation size={16} fill="white" />
-            </div>
-            <span className="logo-text" style={{ fontSize: '1.25rem' }}>TravelPal</span>
-          </div>
-
-          <nav className="sidebar-nav">
-            <div 
-              className={`nav-item ${activeTab === 'destinations' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('destinations'); setSelectedDest(null); setEditingDest(null); }}
-            >
-              <MapPin size={18} className="nav-item-icon" />
-              <span>Destinations</span>
-            </div>
-
-            <div 
-              className={`nav-item ${activeTab === 'add-place' && !editingDest ? 'active' : ''}`}
-              onClick={() => { setActiveTab('add-place'); setEditingDest(null); }}
-            >
-              <Plus size={18} className="nav-item-icon" />
-              <span>Add Destination</span>
-            </div>
-
-            <div 
-              className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
-              onClick={() => setActiveTab('history')}
-            >
-              <History size={18} className="nav-item-icon" />
-              <span>Trip Analytics</span>
-            </div>
-
-            <div 
-              className={`nav-item ${activeTab === 'emergency' ? 'active' : ''}`}
-              onClick={() => setActiveTab('emergency')}
-            >
-              <ShieldAlert size={18} className="nav-item-icon" />
-              <span>SOS Center</span>
-            </div>
-          </nav>
+    <div className="ps-app-container" id="dashboard-layout">
+      {/* Sidebar */}
+      <aside className="ps-sidebar" id="sidebar-nav">
+        {/* Brand */}
+        <div className="ps-sidebar-brand" id="sidebar-logo">
+          <div className="ps-sidebar-logo-icon">🔬</div>
+          <span className="ps-sidebar-brand-name" id="sidebar-brand-title">TravelPal</span>
         </div>
 
-        <div className="sidebar-nav" style={{ marginTop: 'auto', gap: '0.25rem' }}>
-          <div className="nav-item" onClick={onBackToLanding}>
-            <ArrowLeft size={16} className="nav-item-icon" />
-            <span>Landing Page</span>
+        {/* Welcome banner */}
+        <div className="ps-welcome-banner">
+          ✅ Welcome back, Dr. {displayName}!
+        </div>
+
+        {/* Navigation */}
+        <nav className="ps-sidebar-nav">
+          <button
+            className={`ps-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+            id="nav-dashboard"
+          >
+            <span className="ps-nav-icon">📊</span>
+            <span>Dashboard</span>
+          </button>
+
+          <button
+            className={`ps-nav-item ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+            id="nav-patient-history"
+          >
+            <span className="ps-nav-icon">🩻</span>
+            <span>Patient History</span>
+          </button>
+
+          <button
+            className={`ps-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+            onClick={() => setActiveTab('analytics')}
+            id="nav-analytics"
+          >
+            <span className="ps-nav-icon">📈</span>
+            <span>Analytics</span>
+          </button>
+
+          <button
+            className={`ps-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('settings')}
+            id="nav-settings"
+          >
+            <span className="ps-nav-icon">⚙️</span>
+            <span>Settings</span>
+          </button>
+        </nav>
+
+        {/* Footer */}
+        <div className="ps-sidebar-footer">
+          <div className="ps-sidebar-status">
+            <span className="ps-status-dot"></span>
+            <span>Clinical Portal Diagnostics Suite</span>
           </div>
-          <div className="nav-item" onClick={onLogout} style={{ color: 'var(--danger)' }}>
-            <LogOut size={16} className="nav-item-icon" />
-            <span>Sign Out</span>
-          </div>
+          <span className="ps-online-badge">Online</span>
+          <button
+            className="ps-nav-item ps-nav-logout"
+            onClick={onLogout}
+            id="sidebar-logout-btn"
+          >
+            <span className="ps-nav-icon">🚪</span>
+            <span>Log Out</span>
+          </button>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="main-content">
-        
-        {activeTrackingDest && (
-          <div 
-            style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              background: 'rgba(99, 102, 241, 0.15)', 
-              border: '1px solid var(--primary)', 
-              color: 'white', 
-              padding: '0.75rem 1.25rem', 
-              borderRadius: 'var(--radius-md)', 
-              marginBottom: '2rem',
-              fontSize: '0.85rem'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Zap size={16} className="nav-item-icon" style={{ color: 'var(--accent)' }} />
-              <span>
-                Location Service Active: Tracking distance to <strong>{activeTrackingDest.title}</strong>
-              </span>
-            </div>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => handleTrackClick(activeTrackingDest)} 
-              style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
-            >
-              Telemetry Dashboard
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'destinations' && (
+      {/* Main Content */}
+      <main className="ps-main-content">
+        {/* Header bar */}
+        <div className="ps-main-header">
           <div>
-            <div className="page-header">
-              <div>
-                <h2 className="page-title">Saved Destinations</h2>
-                <p className="page-subtitle">Track coordinates, calculate speeds, and trigger alarms.</p>
+            <h1 className="ps-main-greeting">Hello, Dr. {displayName}</h1>
+            <p className="ps-main-sub">Clinical Portal Diagnostics Suite</p>
+            <span className="ps-online-text">Online</span>
+          </div>
+        </div>
+
+        {/* DASHBOARD TAB */}
+        {activeTab === 'dashboard' && (
+          <div id="dashboard-overview">
+            {/* Stat Cards Row */}
+            <div className="ps-stat-cards-row">
+              {/* Total Scans */}
+              <div
+                className={`ps-stat-card ${filterMode === 'all' ? 'stat-active' : ''}`}
+                onClick={() => setFilterMode('all')}
+                id="total-scans-card"
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="ps-stat-icon">🗂️</div>
+                <div className="ps-stat-body">
+                  <div className="ps-stat-label">Total Scans</div>
+                  <div className="ps-stat-value">{scans.length}</div>
+                  <div className="ps-stat-trend">📈 All records</div>
+                </div>
               </div>
-              {destinations.length > 0 && (
-                <button className="btn btn-secondary text-danger" onClick={handleDeleteAll}>
-                  Delete All
-                </button>
-              )}
+
+              {/* Normal Scans */}
+              <div
+                className={`ps-stat-card stat-normal ${filterMode === 'normal' ? 'stat-active' : ''}`}
+                onClick={() => setFilterMode('normal')}
+                id="normal-scans-stat-card"
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="ps-stat-icon">✅</div>
+                <div className="ps-stat-body">
+                  <div className="ps-stat-label">Normal Scans</div>
+                  <div className="ps-stat-value">{normalScans.length}</div>
+                  <div className="ps-stat-trend">📈 Healthy</div>
+                </div>
+              </div>
+
+              {/* Abnormal Scans */}
+              <div
+                className={`ps-stat-card stat-abnormal ${filterMode === 'abnormal' ? 'stat-active' : ''}`}
+                onClick={() => setFilterMode('abnormal')}
+                id="abnormal-scans-stat-card"
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="ps-stat-icon">⚠️</div>
+                <div className="ps-stat-body">
+                  <div className="ps-stat-label">Abnormal Scans</div>
+                  <div className="ps-stat-value">{abnormalScans.length}</div>
+                  <div className="ps-stat-trend">📉 Requires review</div>
+                </div>
+              </div>
             </div>
 
-            {destinations.length === 0 ? (
-              <div className="glass-card empty-state">
-                <MapPin className="empty-icon" />
-                <h3>No Destinations Found</h3>
-                <p>Click "Add Destination" to configure your first geofence alert.</p>
-                <button className="btn btn-primary" onClick={() => setActiveTab('add-place')} style={{ marginTop: '1.5rem' }}>
-                  Add Destination
-                </button>
+            {/* Upload CT Scan button */}
+            <div className="ps-upload-section">
+              {/* Hidden file input in DOM */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.dcm"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+                id="ct-scan-file-input"
+              />
+              <button
+                className="ps-btn ps-btn-primary ps-upload-btn"
+                onClick={() => setShowWorkspace(true)}
+                id="select-ct-scan-btn"
+              >
+                🔬 Select CT Scan
+              </button>
+              <p className="ps-upload-hint">
+                Upload a DICOM or CT image to run YOLOv8 inference
+              </p>
+            </div>
+
+            {/* Recent Scans Table */}
+            {filteredScans.length > 0 && (
+              <div className="ps-recent-scans">
+                <h3 className="ps-section-sub-heading">Recent Scans</h3>
+                <table className="ps-history-table" id="dashboard-scan-table">
+                  <thead>
+                    <tr>
+                      <th className="ps-th">Patient ID</th>
+                      <th className="ps-th">Patient Name</th>
+                      <th className="ps-th">Scan Result</th>
+                      <th className="ps-th">AI Confidence</th>
+                      <th className="ps-th">Sync Timestamp</th>
+                      <th className="ps-th">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredScans.slice(0, 5).map((scan, idx) => (
+                      <tr key={scan.id || idx} className="ps-tr">
+                        <td className="ps-td ps-td-mono">{scan.patientId}</td>
+                        <td className="ps-td">{scan.patientName}</td>
+                        <td className="ps-td">
+                          <span className={`ps-scan-badge ${scan.isNormal ? 'badge-normal' : 'badge-abnormal'}`}>
+                            {scan.scanResult}
+                          </span>
+                        </td>
+                        <td className="ps-td">{scan.confidence}%</td>
+                        <td className="ps-td ps-td-muted">
+                          {new Date(scan.scanDate).toLocaleString()}
+                        </td>
+                        <td className="ps-td">
+                          <button
+                            className="ps-action-btn ps-action-delete"
+                            onClick={() => handleDeleteScan(scan.id)}
+                          >🗑️</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              <div className="destinations-grid">
-                {destinations.map((dest) => (
-                  <DestinationCard
-                    key={dest.id}
-                    dest={dest}
-                    userLocation={userLocation}
-                    onTrack={handleTrackClick}
-                    onEdit={handleEditClick}
-                    onDelete={handleDeleteDestination}
-                  />
-                ))}
+            )}
+
+            {filteredScans.length === 0 && (
+              <div className="ps-empty-dashboard">
+                <div className="ps-empty-icon">🔬</div>
+                <h3>No CT Scans Yet</h3>
+                <p>Click "Select CT Scan" to upload your first scan for AI analysis.</p>
               </div>
             )}
           </div>
         )}
 
-        {activeTab === 'add-place' && (
-          <AddDestination
-            editingDest={editingDest}
-            onSave={handleSaveDestination}
-            onCancel={() => { setActiveTab('destinations'); setEditingDest(null); }}
-          />
-        )}
-
-        {activeTab === 'detail' && selectedDest && (
-          <DestinationDetail
-            dest={selectedDest}
-            userLocation={userLocation}
-            activeTrackingDest={activeTrackingDest}
-            notifyContact={notifyContact}
-            onToggleNotifyContact={() => setNotifyContact(!notifyContact)}
-            onStartTracking={startTracking}
-            onStopTracking={stopTracking}
-            tripStartTime={tripStartTime}
-            initialDistance={initialDistance}
-            onBack={() => setActiveTab('destinations')}
-          />
-        )}
-
+        {/* PATIENT HISTORY TAB */}
         {activeTab === 'history' && (
-          <TripHistory
-            history={tripHistory}
-            onClearHistory={handleClearHistory}
+          <PatientHistory
+            scans={scans}
+            onDelete={handleDeleteScan}
           />
         )}
 
-        {activeTab === 'emergency' && (
-          <EmergencyContacts
-            isSosActive={isSosActive}
-            onToggleSos={isSosActive ? stopSosAlert : triggerSosAlert}
-            sosLogs={sosLogs}
-            onClearLogs={handleClearSosLogs}
-            emergencyContacts={emergencyContacts}
-            onSaveContacts={handleSaveEmergencyContacts}
+        {/* ANALYTICS TAB */}
+        {activeTab === 'analytics' && (
+          <Analytics scans={scans} />
+        )}
+
+        {/* SETTINGS TAB */}
+        {activeTab === 'settings' && (
+          <Settings
+            doctorName={displayName}
+            email={email}
+            onLogout={onLogout}
           />
         )}
       </main>
 
-
-
-      {/* Alarm Fullscreen Modal */}
-      {alarmTriggered && arrivalDetails && (
-        <div className="alarm-overlay">
-          <div className="alarm-content">
-            <ShieldAlert className="alarm-icon-pulse" />
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>DANGER BOUNDARY MET</h1>
-            <h3 style={{ fontSize: '1.25rem', color: '#fca5a5', fontWeight: 600, marginBottom: '1.5rem' }}>
-              Arrived near: {arrivalDetails.destName}
-            </h3>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.9rem', color: '#e2e8f0', textAlign: 'left', width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckCircle size={16} color="var(--success)" />
-                <span>Boundary Limit: &lt; 5.0 km</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckCircle size={16} color="var(--success)" />
-                <span>Distance Recorded: {arrivalDetails.distance.toFixed(1)} km</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckCircle size={16} color="var(--success)" />
-                <span>Elapsed Journey Time: {arrivalDetails.duration} min</span>
-              </div>
-              {notifyContact && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6ee7b7' }}>
-                  <CheckCircle size={16} color="var(--success)" />
-                  <span>Simulated SOS SMS Dispatched!</span>
-                </div>
-              )}
-            </div>
-
-            <button className="btn btn-danger" onClick={dismissAlarm} style={{ width: '100%', gap: '0.5rem' }}>
-              <VolumeX size={18} /> DISMISS ALARM
-            </button>
-          </div>
-        </div>
+      {/* CT Scan Workspace Modal */}
+      {showWorkspace && (
+        <CTScanWorkspace
+          onClose={() => setShowWorkspace(false)}
+          onSyncComplete={(report) => {
+            handleSyncComplete(report);
+          }}
+        />
       )}
     </div>
   );

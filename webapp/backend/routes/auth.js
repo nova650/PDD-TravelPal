@@ -12,6 +12,11 @@ router.post('/signup', async (req, res) => {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
+  // Enforce password complexity (min 8 chars, at least one letter, and one number)
+  if (password.length < 8 || !/\d/.test(password) || !/[a-zA-Z]/.test(password)) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters long and contain at least one letter and one number.' });
+  }
+
   // Check if email already exists
   db.get('SELECT * FROM users WHERE email = ?', [email], async (err, row) => {
     if (err) {
@@ -40,7 +45,7 @@ router.post('/signup', async (req, res) => {
         // Generate JWT
         const token = jwt.sign(
           { id: userId, email },
-          process.env.JWT_SECRET || 'travelpal_secret_key',
+          process.env.JWT_SECRET,
           { expiresIn: '7d' }
         );
 
@@ -77,12 +82,40 @@ router.post('/login', (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET || 'travelpal_secret_key',
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
     res.json({ token, userId: user.id, email: user.email });
   });
+});
+
+// POST /logout - Revoke active JWT
+router.post('/logout', (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(400).json({ error: 'No token provided.' });
+  }
+
+  try {
+    const decoded = jwt.decode(token);
+    const expiresAt = decoded && decoded.exp ? decoded.exp * 1000 : Date.now() + (7 * 24 * 60 * 60 * 1000);
+    
+    req.db.run(
+      'INSERT OR IGNORE INTO revoked_tokens (token, expiresAt) VALUES (?, ?)',
+      [token, expiresAt],
+      (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error logging out.' });
+        }
+        res.json({ success: true, message: 'Logged out successfully.' });
+      }
+    );
+  } catch (e) {
+    res.status(400).json({ error: 'Invalid token format.' });
+  }
 });
 
 module.exports = router;

@@ -25,6 +25,16 @@ router.post('/', auth, (req, res) => {
     return res.status(400).json({ error: 'Title, location, latitude, and longitude are required.' });
   }
 
+  const lat = parseFloat(latitude);
+  const lng = parseFloat(longitude);
+  if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
+    return res.status(400).json({ error: 'Latitude must be between -90 and 90, and longitude must be between -180 and 180.' });
+  }
+
+  if (title.length > 100 || location.length > 200 || (contactNumber && contactNumber.length > 30)) {
+    return res.status(400).json({ error: 'Title, location, or contact number exceed safety length limits.' });
+  }
+
   db.run(
     'INSERT INTO destinations (userId, title, location, latitude, longitude, contactNumber) VALUES (?, ?, ?, ?, ?, ?)',
     [userId, title, location, latitude, longitude, contactNumber],
@@ -54,6 +64,16 @@ router.put('/:id', auth, (req, res) => {
 
   if (!title || !location || latitude === undefined || longitude === undefined) {
     return res.status(400).json({ error: 'Title, location, latitude, and longitude are required.' });
+  }
+
+  const lat = parseFloat(latitude);
+  const lng = parseFloat(longitude);
+  if (isNaN(lat) || lat < -90 || lat > 90 || isNaN(lng) || lng < -180 || lng > 180) {
+    return res.status(400).json({ error: 'Latitude must be between -90 and 90, and longitude must be between -180 and 180.' });
+  }
+
+  if (title.length > 100 || location.length > 200 || (contactNumber && contactNumber.length > 30)) {
+    return res.status(400).json({ error: 'Title, location, or contact number exceed safety length limits.' });
   }
 
   db.run(

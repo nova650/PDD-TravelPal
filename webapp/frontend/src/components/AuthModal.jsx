@@ -54,6 +54,7 @@ export default function AuthModal({ onClose, onSuccess }) {
 
         {error && (
           <div 
+            className="auth-error"
             style={{ 
               background: 'rgba(239, 68, 68, 0.12)', 
               border: '1px solid var(--danger)', 

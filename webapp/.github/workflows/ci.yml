@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: npm ci
+
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Linter
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build Frontend
+        working-directory: frontend
+        run: npm run build
+
+  testing-and-security:
+    name: Verify Test Reports
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install openpyxl
+
+      - name: Publish Test Results to Job Summary
+        run: |
+          python Reports/publish_results.py
+
+      - name: Upload E2E Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: E2E-Test-Report
+          path: Reports/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx
+
+      - name: Upload Security Vulnerabilities Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Security-Vulnerabilities-Report
+          path: Reports/security_report.xlsx
+

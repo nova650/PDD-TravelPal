@@ -1,4 +1,4 @@
-/* Reset App.css to avoid conflicts with index.css */
+/* TravelPal App Root */
 #root {
-  width: 100%;
+  min-height: 100vh;
 }
