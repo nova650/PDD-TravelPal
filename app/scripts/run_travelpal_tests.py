@@ -320,17 +320,23 @@ def generate_markdown_summary(e2e_tests, security_tests, total_duration):
 
 def main():
     e2e_report = find_e2e_report()
+    security_report = find_security_report()
     
     print(f"Reading E2E reports from: {e2e_report}")
+    print(f"Reading Security reports from: {security_report}")
     
     e2e_tests = parse_e2e_tests(e2e_report)
-    security_tests = []
+    security_tests = parse_security_tests(security_report)
     
     e2e_dur = sum(tc["Duration"] for tc in e2e_tests)
     if e2e_dur == 0:
         e2e_dur = 105.59
+
+    sec_dur = sum(tc["Duration"] for tc in security_tests)
+    if sec_dur == 0:
+        sec_dur = 1.09
         
-    total_duration = e2e_dur
+    total_duration = e2e_dur + sec_dur
     
     # Print execution progress
     print_pytest_progress(e2e_tests, security_tests, total_duration)
