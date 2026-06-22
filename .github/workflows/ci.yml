@@ -59,6 +59,12 @@ jobs:
         run: |
           python app/scripts/run_backend_tests.py
 
+      - name: Upload Backend Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Backend-Security-Report
+          path: webapp/Reports/security_report.xlsx
+
   selenium-tests:
     name: Running Selenium E2E Tests
     runs-on: ubuntu-latest
@@ -80,6 +86,12 @@ jobs:
       - name: Run Selenium Auth Tests
         run: |
           python app/scripts/run_frontend_tests.py
+
+      - name: Upload Frontend E2E Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frontend-E2E-Report
+          path: webapp/Reports/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx
 
   mobile-tests:
     name: Running Mobile App E2E Tests
@@ -103,6 +115,12 @@ jobs:
         run: |
           python app/scripts/run_travelpal_tests.py
 
+      - name: Upload Mobile App E2E Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mobile-App-E2E-Report
+          path: app/Report/E2E_Appium_Report_TravelPal_2026-06-12T12-21-58.xlsx
+
   load-tests:
     name: Running Website Load Tests
     runs-on: ubuntu-latest
@@ -125,6 +143,12 @@ jobs:
         run: |
           python app/scripts/run_load_tests.py
 
+      - name: Upload Website Load Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Website-Load-Test-Report
+          path: Vulnerability Test Results/Front-end/Website-Load-Test-Report.xlsx
+
   verify-all-tests:
     name: Publish Unified Verification Report
     runs-on: ubuntu-latest
@@ -146,3 +170,9 @@ jobs:
       - name: Run Unified Verification Suite
         run: |
           python app/scripts/run_all_tests.py
+
+      - name: Upload Unified Markdown Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: TravelPal-Unified-Report
+          path: travelpal_test_report.md
