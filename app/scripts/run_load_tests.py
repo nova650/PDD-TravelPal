@@ -5,7 +5,7 @@ import time
 import openpyxl
 
 def main():
-    report_path = "Vulnerability Test Results/Front-end/Website-Load-Test-Report.xlsx"
+    report_path = "Vulnerability Test Results/Front-end/Load-Test-Report.xlsx"
     if not os.path.exists(report_path):
         print(f"Error: {report_path} not found.")
         sys.exit(1)

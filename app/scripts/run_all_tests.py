@@ -227,10 +227,10 @@ def generate_markdown(website_tests, backend_tests, mobile_tests, endpoints, tim
 
 def main():
     # Setup paths relative to root directory
-    website_e2e_path = 'webapp/Reports/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx'
-    backend_sec_path = 'webapp/Reports/security_report.xlsx'
-    mobile_e2e_path = 'app/Report/E2E_Appium_Report_TravelPal_2026-06-12T12-21-58.xlsx'
-    load_test_path = 'Vulnerability Test Results/Front-end/Website-Load-Test-Report.xlsx'
+    website_e2e_path = 'Vulnerability Test Results/Front-end/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx'
+    backend_sec_path = 'Vulnerability Test Results/Back-end/security_report.xlsx'
+    mobile_e2e_path = 'Vulnerability Test Results/App/E2E_Appium_Report_TravelPal_2026-06-12T12-21-58.xlsx'
+    load_test_path = 'Vulnerability Test Results/Front-end/Load-Test-Report.xlsx'
     
     print("Reading test validation records from report databases...")
     website_tests = get_tests(website_e2e_path)

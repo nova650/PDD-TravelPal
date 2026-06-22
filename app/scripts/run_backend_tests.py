@@ -34,7 +34,7 @@ def get_tests(file_path):
     return tests
 
 def main():
-    backend_sec_path = 'webapp/Reports/security_report.xlsx'
+    backend_sec_path = 'Vulnerability Test Results/Back-end/security_report.xlsx'
     
     print("======================================================================")
     print(f"Starting Backend Verification and Security Suite")

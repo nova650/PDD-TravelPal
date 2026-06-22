@@ -63,7 +63,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Backend-Security-Report
-          path: webapp/Reports/security_report.xlsx
+          path: Vulnerability Test Results/Back-end/security_report.xlsx
 
   selenium-tests:
     name: Running Selenium E2E Tests
@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Frontend-E2E-Report
-          path: webapp/Reports/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx
+          path: Vulnerability Test Results/Front-end/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx
 
   mobile-tests:
     name: Running Mobile App E2E Tests
@@ -119,7 +119,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Mobile-App-E2E-Report
-          path: app/Report/E2E_Appium_Report_TravelPal_2026-06-12T12-21-58.xlsx
+          path: Vulnerability Test Results/App/E2E_Appium_Report_TravelPal_2026-06-12T12-21-58.xlsx
 
   load-tests:
     name: Running Website Load Tests
@@ -147,7 +147,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Website-Load-Test-Report
-          path: Vulnerability Test Results/Front-end/Website-Load-Test-Report.xlsx
+          path: Vulnerability Test Results/Front-end/Load-Test-Report.xlsx
 
   verify-all-tests:
     name: Publish Unified Verification Report

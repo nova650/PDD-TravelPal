@@ -7,10 +7,10 @@ import xml.etree.ElementTree as ET
 
 def find_e2e_report():
     # Look for the E2E Appium report inside the Report folder
-    report_pattern = os.path.join("app", "Report", "E2E_Appium_Report_TravelPal_*.xlsx")
+    report_pattern = os.path.join("Vulnerability Test Results", "App", "E2E_Appium_Report_TravelPal_*.xlsx")
     files = glob.glob(report_pattern)
     if not files:
-        fallback_pattern = os.path.join("app", "Report", "*TravelPal*.xlsx")
+        fallback_pattern = os.path.join("Vulnerability Test Results", "App", "*TravelPal*.xlsx")
         files = [f for f in glob.glob(fallback_pattern) if "security" not in f.lower()]
     if not files:
         print("Error: TravelPal E2E report not found in the Report directory.")
@@ -19,7 +19,7 @@ def find_e2e_report():
 
 def find_security_report():
     # Look for the security report inside the Report folder
-    report_path = os.path.join("app", "Report", "security_report.xlsx")
+    report_path = os.path.join("Vulnerability Test Results", "App", "security_report.xlsx")
     if not os.path.exists(report_path):
         print("Error: security_report.xlsx not found in the Report directory.")
         sys.exit(1)

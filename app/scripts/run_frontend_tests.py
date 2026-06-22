@@ -34,7 +34,7 @@ def get_tests(file_path):
     return tests
 
 def main():
-    frontend_e2e_path = 'webapp/Reports/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx'
+    frontend_e2e_path = 'Vulnerability Test Results/Front-end/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx'
     
     print("======================================================================")
     print(f"Starting Frontend E2E Verification Suite")
