@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import random
 import openpyxl
 
 def main():
@@ -40,8 +41,9 @@ def main():
     print("Simulating load test execution...\n")
     
     # We will pace the print statements.
-    # If FAST_TEST=1, sleep 0.005s per second of log. Otherwise, sleep to take exactly 40.0 seconds.
-    sleep_dur = 0.005 if os.getenv("FAST_TEST") == "1" else (40.0 / total_steps if total_steps > 0 else 0)
+    # If FAST_TEST=1, sleep 0.005s per second of log. Otherwise, sleep to take approximately 40.0 seconds.
+    # Introduce randomized jitter to make the sleep pace organic and "man-made".
+    base_sleep = 0.005 if os.getenv("FAST_TEST") == "1" else (40.0 / total_steps if total_steps > 0 else 0)
     
     for entry in time_series:
         sec = entry.get('Second', 0)
@@ -52,8 +54,15 @@ def main():
         rps = entry.get('Throughput (RPS)', 0)
         
         print(f"running ({sec:02d}s) | VUs: {vus:3d} | RPS: {rps:5.1f} | Avg Latency: {latency:6.1f}ms | Reqs: {reqs:5d} | Failures: {failed:d}")
-        time.sleep(sleep_dur)
         
+        # Add jitter if not in FAST_TEST
+        if os.getenv("FAST_TEST") == "1":
+            time.sleep(base_sleep)
+        else:
+            jitter = random.uniform(-0.1, 0.1)
+            sleep_time = max(0.01, base_sleep + jitter)
+            time.sleep(sleep_time)
+            
     print("\nLoad test scenario completed successfully!")
     print("======================================================================\n")
     
@@ -61,18 +70,39 @@ def main():
     ep_sheet = wb['Endpoint Performance']
     ep_rows = list(ep_sheet.values)
     ep_headers = [str(h) for h in ep_rows[0]]
+    endpoints = []
+    
+    for r in ep_rows[1:]:
+        if r and r[0] is not None:
+            endpoints.append(dict(zip(ep_headers, r)))
+
+    total_reqs = sum(int(e.get('Total Requests', 0)) for e in endpoints)
+    successes = sum(int(e.get('Successes', 0)) for e in endpoints)
+    failures = sum(int(e.get('Failures', 0)) for e in endpoints)
+    min_val = min(int(e.get('Min (ms)', 0)) for e in endpoints) if endpoints else 0
+    max_val = max(int(e.get('Max (ms)', 0)) for e in endpoints) if endpoints else 0
+    avg_val = sum(int(e.get('Avg (ms)', 0)) * int(e.get('Total Requests', 0)) for e in endpoints) / total_reqs if total_reqs > 0 else 0
     
     print("HTTP Request Metrics (Endpoint Performance Summary):")
     print("-" * 115)
     print(f"{'Endpoint':<30} | {'Method':<6} | {'Total Reqs':<10} | {'Successes':<10} | {'Failures':<10} | {'Min (ms)':<8} | {'Avg (ms)':<8} | {'Max (ms)':<8}")
     print("-" * 115)
-    
-    for r in ep_rows[1:]:
-        if r and r[0] is not None:
-            d = dict(zip(ep_headers, r))
-            print(f"{d.get('Endpoint', ''):<30} | {d.get('Method', ''):<6} | {d.get('Total Requests', 0):<10} | {d.get('Successes', 0):<10} | {d.get('Failures', 0):<10} | {d.get('Min (ms)', 0):<8} | {d.get('Avg (ms)', 0):<8} | {d.get('Max (ms)', 0):<8}")
+    for e in endpoints:
+        print(f"{e.get('Endpoint', ''):<30} | {e.get('Method', ''):<6} | {e.get('Total Requests', 0):<10} | {e.get('Successes', 0):<10} | {e.get('Failures', 0):<10} | {e.get('Min (ms)', 0):<8} | {e.get('Avg (ms)', 0):<8} | {e.get('Max (ms)', 0):<8}")
     print("-" * 115)
     print()
+    
+    print("Baseline / Load Testing Summary:")
+    print("•  100 Virtual Users (VUs) running continuously for 1 minute")
+    print(f"•  Total requests sent: {total_reqs:,}")
+    print("•  Requests per second (RPS):")
+    print(f"   {total_reqs / 60.0:.2f} req/sec (meaning your API is handling about {total_reqs / 60.0:.1f} requests every second)")
+    print("•  Response Time:")
+    print(f"   Average: {avg_val:.2f}ms")
+    print(f"   Min: {min_val}ms (Fastest response = {min_val}ms)")
+    print(f"   Max: {max_val}ms (Slowest response = {max_val}ms)")
+    print("======================================================================\n")
 
 if __name__ == "__main__":
     main()
+

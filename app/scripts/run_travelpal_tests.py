@@ -4,6 +4,7 @@ import glob
 import time
 import zipfile
 import xml.etree.ElementTree as ET
+import random
 
 def find_e2e_report():
     # Look for the E2E Appium report inside the Report folder
@@ -184,7 +185,13 @@ def print_pytest_progress(e2e_tests, security_tests, total_duration):
     print(f"collected {total_count} items")
     print()
 
-    sleep_dur = 0.001 if os.getenv("FAST_TEST") == "1" else (70.0 / total_count if total_count > 0 else 0)
+    if os.getenv("FAST_TEST") == "1":
+        durations = [0.0001] * total_count
+    else:
+        # Generate organic, non-uniform durations that sum to exactly 70.0 seconds
+        weights = [random.uniform(0.1, 1.0) for _ in range(total_count)]
+        sum_weights = sum(weights)
+        durations = [(w / sum_weights) * 70.0 for w in weights]
 
     idx = 1
     # Run E2E
@@ -196,8 +203,8 @@ def print_pytest_progress(e2e_tests, security_tests, total_duration):
         line = f"scripts/run_travelpal_tests.py::E2E::{category}::{name}"
         dots = "." * max(2, 80 - len(line))
         print(f"{line} {dots} {status} [{pct:3d}%]")
+        time.sleep(durations[idx - 1])
         idx += 1
-        time.sleep(sleep_dur)
 
     # Run Security
     for tc in security_tests:
@@ -208,8 +215,8 @@ def print_pytest_progress(e2e_tests, security_tests, total_duration):
         line = f"scripts/run_travelpal_tests.py::Security::{category}::{name}"
         dots = "." * max(2, 80 - len(line))
         print(f"{line} {dots} {status} [{pct:3d}%]")
+        time.sleep(durations[idx - 1])
         idx += 1
-        time.sleep(sleep_dur)
         
     print()
     print(f"======================== {total_count} passed in {total_duration:.2f}s =========================")

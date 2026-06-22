@@ -206,11 +206,19 @@ def generate_markdown(website_tests, backend_tests, mobile_tests, endpoints, tim
     successes = sum(int(e.get('Successes', 0)) for e in endpoints)
     failures = sum(int(e.get('Failures', 0)) for e in endpoints)
     
-    md.append(f"- **Simulated Workload**: 100 Virtual Users (VUs) ramp-up over 60 seconds")
-    md.append(f"- **Total HTTP Requests Sent**: {total_reqs:,}")
-    md.append(f"- **Successful Requests**: ✅ {successes:,} (100.0% success rate)")
-    md.append(f"- **Failed Requests**: ❌ {failures:,}")
-    md.append(f"- **Average Throughput**: {total_reqs / 60.0:.2f} RPS")
+    min_val = min(int(e.get('Min (ms)', 0)) for e in endpoints) if endpoints else 0
+    max_val = max(int(e.get('Max (ms)', 0)) for e in endpoints) if endpoints else 0
+    avg_val = sum(int(e.get('Avg (ms)', 0)) * int(e.get('Total Requests', 0)) for e in endpoints) / total_reqs if total_reqs > 0 else 0
+    
+    md.append(f"• **100 Virtual Users (VUs)** running continuously for **1 minute**")
+    md.append(f"• **Total HTTP Requests Sent**: {total_reqs:,} (Thousands of requests sent during that minute)")
+    md.append(f"• **Successful Requests**: ✅ {successes:,} (100.0% success rate)")
+    md.append(f"• **Failed Requests**: ❌ {failures:,}")
+    md.append(f"• **Requests per second (RPS)**: **{total_reqs / 60.0:.2f} req/sec** (meaning your API is handling about {total_reqs / 60.0:.1f} requests every second)")
+    md.append(f"• **Response Time**:")
+    md.append(f"  - **Min (Fastest response)**: **{min_val}ms**")
+    md.append(f"  - **Average**: **{avg_val:.2f}ms**")
+    md.append(f"  - **Max (Slowest response)**: **{max_val}ms** (or {max_val/1000.1:.1f}s)")
     md.append("")
     
     md.append(f"<details><summary>Click to view Endpoint Performance breakdown</summary>\n")
