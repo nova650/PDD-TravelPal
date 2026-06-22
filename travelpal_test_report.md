@@ -5,9 +5,9 @@ This dashboard displays the test results verified from the completed test execut
 ## 📊 Overall Verification Metrics
 | Component | Total Tests | Passed | Failed | Pass Rate | Duration | Status |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Website (Frontend)** | 126 | 126 | 0 | 100.0% | 0.23s | 🟢 PASSED |
-| **Backend (API & Security)** | 27 | 27 | 0 | 100.0% | 0.04s | 🟢 PASSED |
-| **Mobile App (Android)** | 395 | 395 | 0 | 100.0% | 0.73s | 🟢 PASSED |
+| **Website (Frontend)** | 126 | 126 | 0 | 100.0% | 0.24s | 🟢 PASSED |
+| **Backend (API & Security)** | 27 | 27 | 0 | 100.0% | 0.05s | 🟢 PASSED |
+| **Mobile App (Android)** | 395 | 395 | 0 | 100.0% | 0.71s | 🟢 PASSED |
 | **Website Load Test** | 100 | 100 | 0 | 100.0% | 60.00s | 🟢 PASSED |
 | **Total Unified Suite** | **648** | **648** | **0** | **100.0%** | **61.00s** | **🟢 PASSED** |
 
