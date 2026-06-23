@@ -90,7 +90,7 @@ jobs:
       - name: Upload Frontend E2E Report
         uses: actions/upload-artifact@v4
         with:
-          name: Test-Report
+          name: Website-E2E
           path: Vulnerability Test Results/Front-end/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx
 
   mobile-tests:
@@ -146,7 +146,7 @@ jobs:
       - name: Upload Website Load Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: Website-Load-Test-Report
+          name: Load-Test-Report
           path: Vulnerability Test Results/Front-end/Load-Test-Report.xlsx
 
   verify-all-tests:

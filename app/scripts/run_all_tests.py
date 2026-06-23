@@ -229,10 +229,10 @@ def generate_markdown(website_tests, backend_tests, mobile_tests, endpoints, tim
     md.append("The full Excel spreadsheets (`.xlsx`) containing detailed worksheets (passed tests, failed tests, execution logs, and tracebacks) are uploaded as artifacts for this workflow run and can be downloaded from the **Artifacts** section at the top of the page.\n")
     md.append("| Artifact | Description |")
     md.append("| :--- | :--- |")
-    md.append("| **Test Report** | Website E2E test results (`.xlsx`) |")
+    md.append("| **Website-E2E** | Website E2E test results (`.xlsx`) |")
     md.append("| **Backend-Security-Report** | Backend API & Security verification results (`.xlsx`) |")
     md.append("| **Mobile-App-E2E-Report** | E2E Appium (App) test results (`.xlsx`) |")
-    md.append("| **Website-Load-Test-Report** | Load Test performance results (`.xlsx`) |")
+    md.append("| **Load-Test-Report** | Load Test performance results (`.xlsx`) |")
     md.append("| **TravelPal-Unified-Report** | This unified markdown report (`.md`) |")
     
     return "\n".join(md)
