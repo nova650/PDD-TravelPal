@@ -340,17 +340,7 @@ def main():
     # Generate unified markdown report
     markdown_report = generate_markdown_summary(e2e_tests, security_tests, total_duration)
     
-    # Write to GITHUB_STEP_SUMMARY if available
-    summary_file = os.getenv("GITHUB_STEP_SUMMARY")
-    if summary_file:
-        with open(summary_file, "a") as sf:
-            sf.write(markdown_report)
-        print("Workflow summary successfully appended to GITHUB_STEP_SUMMARY.")
-    else:
-        local_report_path = "travelpal_test_report.md"
-        with open(local_report_path, "w") as lf:
-            lf.write(markdown_report)
-        print(f"Generated local report at: {local_report_path}")
+    print("Mobile App E2E tests completed.")
 
 if __name__ == '__main__':
     main()
