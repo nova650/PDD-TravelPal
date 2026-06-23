@@ -244,10 +244,6 @@ def generate_markdown_summary(e2e_tests, security_tests, total_duration):
     pass_rate = (overall_passed / overall_total) * 100 if overall_total > 0 else 0.0
     
     md = []
-    md.append("# 📱 TravelPal E2E & Security Verification Dashboard")
-    md.append("")
-    md.append("This report lists the status of both E2E Appium and Backend Security verification tests run for **TravelPal**.")
-    md.append("")
     
     # Summary Table
     md.append("### 📊 Overall Verification Metrics")

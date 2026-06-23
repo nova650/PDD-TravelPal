@@ -1,7 +1,3 @@
-# 📱 TravelPal E2E & Security Verification Dashboard
-
-This report lists the status of both E2E Appium and Backend Security verification tests run for **TravelPal**.
-
 ### 📊 Overall Verification Metrics
 | Metric | Value |
 | :--- | :--- |

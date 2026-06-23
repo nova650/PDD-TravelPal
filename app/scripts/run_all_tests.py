@@ -150,18 +150,15 @@ def generate_markdown(website_tests, backend_tests, mobile_tests, endpoints, tim
     mob_status = "🟢 PASSED" if mob_failed == 0 else "🔴 FAILED"
     load_status = "🟢 PASSED"
     
-    md.append(f"| **Website (Frontend)** | {web_total} | {web_passed} | {web_failed} | {((web_passed/web_total)*100 if web_total > 0 else 0):.1f}% | {web_duration:.2f}s | {web_status} |")
+    md.append(f"| **Website E2E** | {web_total} | {web_passed} | {web_failed} | {((web_passed/web_total)*100 if web_total > 0 else 0):.1f}% | {web_duration:.2f}s | {web_status} |")
     md.append(f"| **Backend (API & Security)** | {be_total} | {be_passed} | {be_failed} | {((be_passed/be_total)*100 if be_total > 0 else 0):.1f}% | {be_duration:.2f}s | {be_status} |")
-    md.append(f"| **Mobile App (Android)** | {mob_total} | {mob_passed} | {mob_failed} | {((mob_passed/mob_total)*100 if mob_total > 0 else 0):.1f}% | {mob_duration:.2f}s | {mob_status} |")
-    md.append(f"| **Website Load Test** | {load_total} | {load_passed} | {load_failed} | 100.0% | {load_duration:.2f}s | {load_status} |")
-    
-    overall_status = "🟢 PASSED" if total_failed == 0 else "🔴 FAILED"
-    md.append(f"| **Total Unified Suite** | **{total_tests}** | **{total_passed}** | **{total_failed}** | **{overall_pass_rate:.1f}%** | **{total_duration:.2f}s** | **{overall_status}** |")
+    md.append(f"| **E2E Appium (App)** | {mob_total} | {mob_passed} | {mob_failed} | {((mob_passed/mob_total)*100 if mob_total > 0 else 0):.1f}% | {mob_duration:.2f}s | {mob_status} |")
+    md.append(f"| **Load Test** | {load_total} | {load_passed} | {load_failed} | 100.0% | {load_duration:.2f}s | {load_status} |")
     md.append("\n")
     
     # Expandable detail tables
     # 1. Website
-    md.append("### 💻 Website (Frontend) Test Details")
+    md.append("### 💻 Website E2E Test Details")
     md.append(f"<details><summary>Click to view all Website E2E Test Cases ({web_total} tests)</summary>\n")
     md.append("| No. | Category | Test Name | Status | Duration | Details / Error |")
     md.append("| :--- | :--- | :--- | :---: | :---: | :--- |")
@@ -185,8 +182,8 @@ def generate_markdown(website_tests, backend_tests, mobile_tests, endpoints, tim
     md.append("\n</details>\n")
     
     # 3. Mobile App
-    md.append("### 📱 Mobile App (Android) Test Details")
-    md.append(f"<details><summary>Click to view all Mobile App Test Cases ({mob_total} tests)</summary>\n")
+    md.append("### 📱 E2E Appium (App) Test Details")
+    md.append(f"<details><summary>Click to view all E2E Appium (App) Test Cases ({mob_total} tests)</summary>\n")
     md.append("| No. | Category | Test Name | Status | Duration | Details / Error |")
     md.append("| :--- | :--- | :--- | :---: | :---: | :--- |")
     for idx, t in enumerate(mobile_tests, 1):
@@ -199,7 +196,7 @@ def generate_markdown(website_tests, backend_tests, mobile_tests, endpoints, tim
     md.append("\n</details>\n")
     
     # 4. Load Testing Details
-    md.append("### ⚡ Website Load Test Performance Summary")
+    md.append("### ⚡ Load Test Performance Summary")
     
     # Calculate performance metrics
     total_reqs = sum(int(e.get('Total Requests', 0)) for e in endpoints)
@@ -229,7 +226,14 @@ def generate_markdown(website_tests, backend_tests, mobile_tests, endpoints, tim
     md.append("\n</details>\n")
     
     md.append("## 📦 Downloadable Test Report Artifacts")
-    md.append("The full Excel spreadsheets (`.xlsx`) containing detailed worksheets (passed tests, failed tests, execution logs, and tracebacks) are uploaded as artifacts for this workflow run and can be downloaded from the **Artifacts** section at the top of the page.")
+    md.append("The full Excel spreadsheets (`.xlsx`) containing detailed worksheets (passed tests, failed tests, execution logs, and tracebacks) are uploaded as artifacts for this workflow run and can be downloaded from the **Artifacts** section at the top of the page.\n")
+    md.append("| Artifact | Description |")
+    md.append("| :--- | :--- |")
+    md.append("| **Test Report** | Website E2E test results (`.xlsx`) |")
+    md.append("| **Backend-Security-Report** | Backend API & Security verification results (`.xlsx`) |")
+    md.append("| **Mobile-App-E2E-Report** | E2E Appium (App) test results (`.xlsx`) |")
+    md.append("| **Website-Load-Test-Report** | Load Test performance results (`.xlsx`) |")
+    md.append("| **TravelPal-Unified-Report** | This unified markdown report (`.md`) |")
     
     return "\n".join(md)
 
@@ -273,7 +277,7 @@ def main():
     mob_durations = all_durations[web_len + be_len : web_len + be_len + mob_len]
     
     # Run execution suites
-    run_suite("Website (Frontend) E2E", website_tests, web_durations)
+    run_suite("Website E2E", website_tests, web_durations)
     run_suite("Backend Security / Verification", backend_tests, be_durations)
     run_suite("Mobile App E2E", mobile_tests, mob_durations)
     

@@ -90,7 +90,7 @@ jobs:
       - name: Upload Frontend E2E Report
         uses: actions/upload-artifact@v4
         with:
-          name: Frontend-E2E-Report
+          name: Test-Report
           path: Vulnerability Test Results/Front-end/E2E_Test_Report_TravelPal_2026-06-11T11-50-43.xlsx
 
   mobile-tests:
